@@ -9,6 +9,7 @@ import (
 	"gql-demo/graph/generated"
 	"gql-demo/graph/model"
 	"math/rand"
+	"time"
 )
 
 func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
@@ -18,6 +19,12 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) 
 		UserID: input.UserID,
 	}
 	r.todos = append(r.todos, todo)
+	go func() {
+		for id, todoSubItem := range r.DurationMapSubscription {
+			fmt.Printf("%d \n", id)
+			*todoSubItem <- r.todos
+		}
+	}()
 
 	return todo, nil
 }
@@ -27,11 +34,40 @@ func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
 }
 
 func (r *subscriptionResolver) Todos(ctx context.Context) (<-chan []*model.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
+	id := time.Now().UnixNano()
+	todos := make(chan []*model.Todo)
+	r.mu.Lock()
+	if r.DurationMapSubscription == nil {
+		r.DurationMapSubscription = make(map[int64]*chan []*model.Todo)
+	}
+	r.DurationMapSubscription[id] = &todos
+	r.mu.Unlock()
+	fmt.Printf("connect id: %d\n", id)
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		delete(r.DurationMapSubscription, id)
+		r.mu.Unlock()
+		fmt.Printf("disconnect id: %d\n", id)
+		fmt.Println(r.DurationMapSubscription)
+	}()
+	//go func() {
+	//	ticker := time.NewTicker(time.Second)
+	//	for {
+	//		<-ticker.C
+	//		if r.todos != nil {
+	//			*r.DurationMapSubscription[id] <- r.todos
+	//		}
+	//	}
+	//}()
+
+	return *r.DurationMapSubscription[id], nil
 }
 
-func (r *todoResolver) User(ctx context.Context, obj *model.Todo) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *todoResolver) User(ctx context.Context, obj *model.Todo) ( *model.User, error) {
+	user := model.User{}
+
+	return &user, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

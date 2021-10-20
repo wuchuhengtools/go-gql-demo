@@ -1,7 +1,10 @@
 //go:generate go run github.com/99designs/gqlgen
 package graph
 
-import "gql-demo/graph/model"
+import (
+	"gql-demo/graph/model"
+	"sync"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -9,4 +12,6 @@ import "gql-demo/graph/model"
 
 type Resolver struct{
 	todos []*model.Todo
+	mu sync.Mutex
+	DurationMapSubscription map[int64]*chan []*model.Todo
 }

@@ -27,6 +27,7 @@ type Mutation {
   createTodo(input: NewTodo!): Todo!
 }
 
-#type Subscription {
-#  todos: [Todo!]
-#}
+type Subscription {
+  todos: [Todo!]
+}
+

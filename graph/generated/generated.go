@@ -280,6 +280,7 @@ type Mutation {
 type Subscription {
   todos: [Todo!]
 }
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
